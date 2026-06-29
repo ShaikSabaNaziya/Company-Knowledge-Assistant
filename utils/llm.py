@@ -23,6 +23,7 @@ import os
 
 from dotenv import load_dotenv
 import google.generativeai as genai
+import streamlit as st
 
 from utils.search import retrieve_documents
 
@@ -31,33 +32,31 @@ from utils.search import retrieve_documents
 # Load Environment Variables
 # ==========================================================
 
-import streamlit as st
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-
-API_KEY = os.getenv("GEMINI_API_KEY")
-
-if not API_KEY:
-
-    API_KEY = st.secrets["GEMINI_API_KEY"]
-
+def get_api_key():
+    load_dotenv()
     
-if not API_KEY:
-
-    raise Exception(
-        "GEMINI_API_KEY not found inside .env"
-    )
-
+    api_key = os.getenv("GEMINI_API_KEY")
+    
+    if not api_key:
+        try:
+            api_key = st.secrets.get("GEMINI_API_KEY")
+        except Exception:
+            pass
+            
+    if not api_key:
+        raise Exception(
+            "GEMINI_API_KEY not found. Please add it to your .env file or Streamlit secrets."
+        )
+        
+    return api_key
 
 # ==========================================================
 # Configure Gemini
 # ==========================================================
 
-genai.configure(
-    api_key=API_KEY
-)
+def configure_gemini():
+    api_key = get_api_key()
+    genai.configure(api_key=api_key)
 
 
 # ==========================================================
@@ -80,6 +79,8 @@ def initialize_model():
     if MODEL is not None:
 
         return MODEL
+        
+    configure_gemini()
 
     candidate_models = [
 
